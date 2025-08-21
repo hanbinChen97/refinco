@@ -1,0 +1,12 @@
+pandas
+requests
+beautifulsoup4
+lxml
+openpyxl
+python-dotenv
+openai
+
+tldextract
+
+
+crawl4ai
