@@ -83,7 +83,7 @@ def _extract_ppx_text_and_sources(resp_json: Dict[str, Any]) -> Tuple[str, List[
     return text or "", sources
 
 
-def perplexity_generate_text(prompt: str, *, model: str = "sonar-pro") -> Dict[str, Any]:
+def perplexity_generate_text(prompt: str, *, model: str = "sonar-pro", response_format: Dict[str, Any] | None = None) -> Dict[str, Any]:
     base, key = _get_ppx_base_and_key()
     url = base.rstrip("/") + "/chat/completions"
 
@@ -93,7 +93,13 @@ def perplexity_generate_text(prompt: str, *, model: str = "sonar-pro") -> Dict[s
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt},
         ],
+        "web_search_options": {
+            "search_context_size": "high"
+        }
     }
+    
+    if response_format:
+        payload["response_format"] = response_format
 
     try:
         res = requests.post(

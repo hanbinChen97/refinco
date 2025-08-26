@@ -16,6 +16,30 @@ This project uses [uv](https://docs.astral.sh/uv/) for Python package management
    uv sync
    ```
 
+## Running Python Scripts
+
+To run Python scripts with uv's managed environment:
+
+```bash
+# Run Python scripts from project root
+uv run python script_name.py
+
+# Run modules (recommended for scripts in utils/)
+uv run python -m utils.enhance_info_with_perplexity
+uv run python -m tests.test_perplexity_llm_connectivity
+
+# Examples:
+uv run python main.py
+```
+
+Alternatively, activate the virtual environment first:
+```bash
+# Activate the environment (shell-specific command will be shown)
+source .venv/bin/activate  # On macOS/Linux
+# Then run Python normally
+python utils/enhance_info_with_perplexity.py
+```
+
 3. Set up environment variables by copying and configuring the `.env` file:
    ```bash
    cp .env.example .env

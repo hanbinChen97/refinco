@@ -143,6 +143,8 @@ def main():
     for comp in all_swf_companies:
         name_to_url[comp['company_name']] = comp['url']
     
+
+    
     # Add URL column by matching company names
     print("\nMatching companies and adding URLs...")
     df['url'] = df.apply(lambda row: name_to_url.get(row['company_name'], ''), axis=1)

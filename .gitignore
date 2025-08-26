@@ -50,3 +50,6 @@ pnpm-debug.log*
 dist/
 build/
 *.tsbuildinfo
+
+task.md
+task.md

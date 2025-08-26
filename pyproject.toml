@@ -1,0 +1,29 @@
+[project]
+name = "refinco"
+version = "0.1.0"
+description = "Company information enhancement and analysis tool"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "requests",
+    "beautifulsoup4",
+    "lxml",
+    "openpyxl",
+    "python-dotenv",
+    "openai",
+    "tldextract",
+    "crawl4ai",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["utils"]
+include = ["*.py"]
+
+[tool.uv]
+dev-dependencies = []

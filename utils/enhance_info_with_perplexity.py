@@ -71,12 +71,12 @@ def _safe_json_loads(text: str) -> Dict:
 		return {}
 
 
-def _ppx_call(prompt: str, *, model: Optional[str] = None) -> Dict:
+def _ppx_call(prompt: str, *, model: Optional[str] = None, response_format: Optional[Dict] = None) -> Dict:
 	if perplexity_generate_text is None:
 		return {}
 	model = model or os.getenv("PERPLEXITY_MODEL", "sonar-pro")
 	try:
-		res = perplexity_generate_text(prompt, model=model)  # type: ignore[call-arg]
+		res = perplexity_generate_text(prompt, model=model, response_format=response_format)  # type: ignore[call-arg]
 		text = (res or {}).get("text", "")
 		return _safe_json_loads(text)
 	except Exception:
@@ -84,24 +84,26 @@ def _ppx_call(prompt: str, *, model: Optional[str] = None) -> Dict:
 
 
 def _ppx_contact(company: str, country: Optional[str]) -> Dict[str, Optional[str]]:
-	prompt = f"""
-You are an information extraction agent. Search the web and find the official company contact information (not individuals) for this company.
+	prompt = f"Find official contact information for **{company}**{f' in {country}' if country else ''}. Return company email, phone, and contact page from official sources only."
 
-Company: {company}
-Country: {country or ''}
+	response_format = {
+		"type": "json_schema",
+		"json_schema": {
+			"name": "company_contact",
+			"schema": {
+				"type": "object",
+				"properties": {
+					"company_email": {"type": ["string", "null"]},
+					"company_phone": {"type": ["string", "null"]},
+					"company_contact_page": {"type": ["string", "null"]}
+				},
+				"required": ["company_email", "company_phone", "company_contact_page"],
+				"additionalProperties": False
+			}
+		}
+	}
 
-Return STRICT JSON with exactly these keys and nothing else:
-{{
-  "company_email": string | null,
-  "company_phone": string | null,
-  "company_contact_page": string | null
-}}
-
-Rules:
-- Prefer official sources. If unknown, use null. One primary value per field.
-- Respond with JSON only. No markdown.
-""".strip()
-	data = _ppx_call(prompt)
+	data = _ppx_call(prompt, response_format=response_format)
 	def _get(d: Dict, k: str) -> Optional[str]:
 		v = d.get(k) if isinstance(d, dict) else None
 		return v if isinstance(v, str) or v is None else None
@@ -113,27 +115,29 @@ Rules:
 
 
 def _ppx_management(company: str, country: Optional[str]) -> Dict[str, Optional[str]]:
-	prompt = f"""
-You are an information extraction agent. Search the web and find management info (CEO and Co-founder) for this company and their public contact details if available.
+	prompt = f"Find CEO and co-founder information for **{company}**{f' in {country}' if country else ''}. Include names and any publicly available contact details."
 
-Company: {company}
-Country: {country or ''}
+	response_format = {
+		"type": "json_schema",
+		"json_schema": {
+			"name": "company_management",
+			"schema": {
+				"type": "object",
+				"properties": {
+					"ceo": {"type": ["string", "null"]},
+					"ceo_email": {"type": ["string", "null"]},
+					"ceo_phone": {"type": ["string", "null"]},
+					"cofounder": {"type": ["string", "null"]},
+					"cofounder_email": {"type": ["string", "null"]},
+					"cofounder_phone": {"type": ["string", "null"]}
+				},
+				"required": ["ceo", "ceo_email", "ceo_phone", "cofounder", "cofounder_email", "cofounder_phone"],
+				"additionalProperties": False
+			}
+		}
+	}
 
-Return STRICT JSON with exactly these keys and nothing else:
-{{
-  "ceo": string | null,
-  "ceo_email": string | null,
-  "ceo_phone": string | null,
-  "cofounder": string | null,
-  "cofounder_email": string | null,
-  "cofounder_phone": string | null
-}}
-
-Rules:
-- Only extract if clearly attributable to this company; otherwise use null.
-- Respond with JSON only. No markdown.
-""".strip()
-	data = _ppx_call(prompt)
+	data = _ppx_call(prompt, response_format=response_format)
 	def _get(d: Dict, k: str) -> Optional[str]:
 		v = d.get(k) if isinstance(d, dict) else None
 		return v if isinstance(v, str) or v is None else None
@@ -194,15 +198,11 @@ def enhance_company_info_with_perplexity(companies: List[Dict[str, Optional[str]
 
 
 if __name__ == "__main__":
-	# Smoke test: run against a tiny sample (requires PERPLEXITY_API_KEY)
+	# Test _ppx_contact with OneGroup Investments AG
 	if not os.getenv("PERPLEXITY_API_KEY"):
 		print("SKIP: PERPLEXITY_API_KEY not set; populate .env or environment to test.")
 	else:
-		sample: List[Dict[str, Optional[str]]] = [
-			{"company_name": "Rothschild & Co", "country": "France"},
-			{"company_name": "UBS", "country": "Switzerland"},
-		]
-		enriched = enhance_company_info_with_perplexity(sample)
-		for r in enriched:
-			print(json.dumps(r, ensure_ascii=False))
+		print("Testing _ppx_contact with OneGroup Investments AG...")
+		contact_info = _ppx_contact("OneGroup Investments AG", "Switzerland")
+		print(json.dumps(contact_info, ensure_ascii=False, indent=2))
 
